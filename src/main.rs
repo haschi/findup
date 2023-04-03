@@ -139,7 +139,6 @@ impl Same {
 
 type ChecksumMap = HashMap<[u8; 32], Vec<PathBuf>>;
 
-
 type Duplicates = HashMap<u64, Same>;
 
 /// Der Iterator liefert Entries für reguläre Dateien.
@@ -239,30 +238,7 @@ fn print_result(args: &Args, result: Duplicates) {
     }
 }
 
-fn same_size_to_checksums(same: &Same) -> Same {
-    if let Same::SameSize(size) = same {
-        if size.len() > 1 {
-            let mut map = ChecksumMap::new();
-
-            for path in size {
-                // TODO: was soll passieren, wenn die Datei nicht gelesen werden kann?
-                if let Ok(content) = fs::read(path) {
-                    let hash: [u8; 32] = Sha256::digest(content).into();
-                    let entry = map.entry(hash).or_insert_with(|| Vec::new());
-                    entry.push(path.to_owned())
-                }
-            }
-            Same::Checksums(map)
-        } else {
-            same.clone()
-        }
-
-    } else {
-        same.clone()
-    }
-}
-
-fn same_size_to_checksums2((size, same): (u64, Same)) -> (u64, Same) {
+fn same_size_to_checksums((size, same): (u64, Same)) -> (u64, Same) {
     if let Same::SameSize(paths) = &same {
         if paths.len() > 1 {
             let mut map = ChecksumMap::new();
@@ -293,21 +269,9 @@ where
     // 1. Pass: File size
     let walker = Walker::new(path)?;
     let pass1 = walker.fold(Duplicates::new(), group_by_len);    
-    let pass2: Duplicates = pass1.into_iter().map(same_size_to_checksums2).collect();
+    let pass2: Duplicates = pass1.into_iter().map(same_size_to_checksums).collect();
 
     print_result(args, pass2);
 
     Ok(())
 }
-
-// fn traverse2<P>(first: P) -> Result<(), std::io::Error>
-// where
-//     P: AsRef<Path>,
-// {
-//     let walker = Walker::new(first)?;
-
-//     let pass1 = walker.fold(HashMap::new(), group_by_len);
-
-//     println!("{:#?}", pass1);
-//     Ok(())
-// }
