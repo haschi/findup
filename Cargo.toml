@@ -9,3 +9,7 @@ description = "Sucht nach doppelten Dateien"
 [dependencies]
 clap = { version = "4.2.1", features = ["derive"] }
 sha2 = "0.10"
+colored = "2"
+
+[dev-dependencies]
+trycmd = "0.14.15"
